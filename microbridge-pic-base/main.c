@@ -3,9 +3,9 @@
 
   Coded by Yasuhiro ISHII,2011
 
-  Information about this sample code:
+  About this sample code:
   1.Connect to Android device via ADB to retrieve logcat stream right after the device is attached.
-  2.Then,output the logcat it to UART.
+  2.Then,output the retrieved data to UART.
 
   This code is suitable to run on PIC24FJ64GB002(PIC ADK Miniboard rev.1).
   About PIC ADK Miniboard,please contact to Japan Android Group Kobe or Twitter: @yishii.
