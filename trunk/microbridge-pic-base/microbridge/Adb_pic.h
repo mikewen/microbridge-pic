@@ -37,6 +37,7 @@ typedef void*			adb_eventHandler;
 
 
 #define MAX_PAYLOAD 4096;
+#define USB_NAK_LIMIT       32000
 
 #define A_SYNC 0x434e5953
 #define A_CNXN 0x4e584e43

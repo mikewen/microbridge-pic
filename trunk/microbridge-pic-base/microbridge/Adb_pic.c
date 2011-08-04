@@ -386,6 +386,106 @@ int ADB_writeStringMessage(/*usb_device * device, */uint32_t command, uint32_t a
  * @param poll true to poll for a packet on the input endpoint, false to wait for a packet. Use false here when a packet is expected (i.e. OKAY in response to WRTE)
  * @return true iff a packet was successfully received, false otherwise.
  */
+#if 1
+boolean ADB_pollMessage(adb_message * message, boolean poll)
+{
+	int bytesRead=0; // yishii
+//	uint8_t buf[ADB_USB_PACKETSIZE];
+	BYTE result;
+	BYTE* buffer;
+
+	buffer = malloc(ADB_USB_PACKETSIZE);
+	if(buffer == NULL){
+		tprintf("Memory allocation failed(%s:%d)\r\n",__FILE__,__LINE__);
+		while(1);
+	}
+
+	// Poll a packet from the USB
+
+#if 0 // yishii
+	bytesRead = USB::bulkRead(adbDevice, ADB_USB_PACKETSIZE, buf, poll);
+	// Check if the USB in transfer was successful.
+	if (bytesRead<0) return false;
+#else
+
+#if 1
+	if(poll == true){
+		USBHostSetNAKTimeout(
+			mUsbConfiguration.address,
+			mUsbConfiguration.inputEndPointAddress,
+			1,
+			1);
+	}
+#endif
+
+	result = USBHostRead(
+		mUsbConfiguration.address,
+		mUsbConfiguration.inputEndPointAddress,
+		buffer,
+		ADB_USB_PACKETSIZE);
+
+	if(result != USB_SUCCESS){
+		tprintf("[%s] USBHostRead result = %d(%s)\r\n",__func__,result,
+			result == USB_SUCCESS ? "USB_SUCCESS" : "Not USB_SUCCESS");
+		free(buffer);
+#if 1
+		if(poll == true){
+			USBHostSetNAKTimeout(
+				mUsbConfiguration.address,
+				mUsbConfiguration.inputEndPointAddress,
+				1,
+				USB_NAK_LIMIT);
+		}
+#endif
+		return false;
+	}
+
+	bytesRead = _USB_waitUntilCompleteTransaction(
+		mUsbConfiguration.address,
+		mUsbConfiguration.inputEndPointAddress,
+		NULL);
+//	tprintf("bytesRead = %d\r\n",bytesRead);
+
+#if 1
+	if(poll == true){
+		USBHostSetNAKTimeout(
+			mUsbConfiguration.address,
+			mUsbConfiguration.inputEndPointAddress,
+			1,
+			USB_NAK_LIMIT);
+	}
+#endif
+
+#endif
+
+	// Check if the buffer contains a valid message
+	memcpy((void*)message, (void*)buffer, sizeof(adb_message));
+
+	free(buffer);
+
+	// tprintf("message->magic = %08lXh\r\n",message->magic);
+
+	// If the message is corrupt, return.
+	if (message->magic != (message->command ^ 0xffffffff))
+	{
+		serialPrintf("Broken message, magic mismatch, %d bytes\r\n", bytesRead);
+		tprintf("number %08lX != %08lX\r\n",message->magic,(message->command ^ 0xffffffff));
+		return false; // zantei
+#ifdef DEBUG
+		serialPrintf("Broken message, magic mismatch, %d bytes\r\n", bytesRead);
+		return false;
+#endif
+	}
+
+	// Check if the received number of bytes matches our expected 24 bytes of ADB message header.
+	if (bytesRead != sizeof(adb_message)){
+		tprintf("size mismatch\r\n");
+		return false;
+	}
+
+	return true;
+}
+#else
 boolean ADB_pollMessage(adb_message * message, boolean poll)
 {
 	int bytesRead=0; // yishii
@@ -454,6 +554,7 @@ boolean ADB_pollMessage(adb_message * message, boolean poll)
 
 	return true;
 }
+#endif
 
 /**
  * Sends an ADB OPEN message for any connections that are currently in the CLOSED state.
