@@ -47,7 +47,7 @@
 static Connection * firstConnection; //yishii
 static boolean connected;
 static int connectionLocalId = 1;
-BYTE        deviceAddress;  // Address of the device on the USB yishii
+BYTE deviceAddress;  // Address of the device on the USB yishii
 static adb_usbConfiguration mUsbConfiguration;
 boolean _USB_parseDescriptor(BYTE address,adb_usbConfiguration* handle);
 static DWORD _USB_waitUntilCompleteTransaction(BYTE addr,BYTE ep,BYTE* ercode);
@@ -86,11 +86,11 @@ void ADB_init()
 	//yishii	USB::init();
 
 	if ( USBHostInit(0) == TRUE ){
-        tprintf("USB Host initialize finished.\r\n" );
-    } else {
-        tprintf("Failed to initialize USB Host.\r\nHalt system.\r\n");
-        while (1);
-    }
+		tprintf("USB Host initialize finished.\r\n" );
+	} else {
+		tprintf("Failed to initialize USB Host.\r\nHalt system.\r\n");
+		while (1);
+	}
 
 	while(device_attached == false){
 		USBHostTasks();
@@ -119,48 +119,47 @@ Connection * ADB_addConnection(const char * connectionString,
 							   //adb_eventHandler * handler)
 {
 
-    tprintf("[%s] connectionString=[%s] reconnect=%s\r\r\n",
-        __func__,
-        connectionString,
-        reconnect == TRUE ? "True" : "False");
+	tprintf("[%s] connectionString=[%s] reconnect=%s\r\r\n",
+			__func__,
+			connectionString,
+			reconnect == TRUE ? "True" : "False");
 
-    // Allocate a new ADB connection object
-    Connection * connection = (Connection*)malloc(sizeof(Connection));
-    if (connection == NULL){
-            tprintf("Allocate memory failed(%s:%s:%d)\r\r\n",__FILE__,__func__,__LINE__);
-            while(1);
-    }
+	// Allocate a new ADB connection object
+	Connection * connection = (Connection*)malloc(sizeof(Connection));
+	if (connection == NULL){
+		tprintf("Allocate memory failed(%s:%s:%d)\r\r\n",__FILE__,__func__,__LINE__);
+		while(1);
+	}
 
 #if 0
-    // Allocate memory for the connection string
-    connection->connectionString = (char*)strdup(connectionString);
+	// Allocate memory for the connection string
+	connection->connectionString = (char*)strdup(connectionString);
 #else
 	// for PIC
-    connection->connectionString = malloc(strlen(connectionString)+1);
-    strcpy(connection->connectionString,connectionString);
+	connection->connectionString = malloc(strlen(connectionString)+1);
+	strcpy(connection->connectionString,connectionString);
 #endif
-    if (connection->connectionString==NULL)
-    {
-        // Free the connection object and return null
-        free(connection);
-        return NULL;
-    }
+	if (connection->connectionString==NULL){
+		// Free the connection object and return null
+		free(connection);
+		return NULL;
+	}
 
 
-    // Initialise the newly created object.
-    connection->localID = connectionLocalId ++;
-    connection->status = ADB_CLOSED;
-    connection->lastConnectionAttempt = 0;
-    connection->reconnect = reconnect;
-    //yishii noneed for PIC pf / connection->eventHandler = handler;
+	// Initialise the newly created object.
+	connection->localID = connectionLocalId ++;
+	connection->status = ADB_CLOSED;
+	connection->lastConnectionAttempt = 0;
+	connection->reconnect = reconnect;
+	//yishii noneed for PIC pf / connection->eventHandler = handler;
 
-    // Add the connection to the linked list. Note that it's easier to just insert
-    // at position 0 because you don't have to traverse the list :)
-    connection->next = firstConnection;
-    firstConnection = connection;
+	// Add the connection to the linked list. Note that it's easier to just insert
+	// at position 0 because you don't have to traverse the list :)
+	connection->next = firstConnection;
+	firstConnection = connection;
 
-    // Unable to find an empty spot, all connection slots in use.
-    return connection;
+	// Unable to find an empty spot, all connection slots in use.
+	return connection;
 }
 
 // Release resources for each connections
@@ -408,7 +407,6 @@ boolean ADB_pollMessage(adb_message * message, boolean poll)
 	if (bytesRead<0) return false;
 #else
 
-#if 1
 	if(poll == true){
 		USBHostSetNAKTimeout(
 			mUsbConfiguration.address,
@@ -416,7 +414,6 @@ boolean ADB_pollMessage(adb_message * message, boolean poll)
 			1,
 			1);
 	}
-#endif
 
 	result = USBHostRead(
 		mUsbConfiguration.address,
@@ -428,7 +425,7 @@ boolean ADB_pollMessage(adb_message * message, boolean poll)
 		tprintf("[%s] USBHostRead result = %d(%s)\r\n",__func__,result,
 			result == USB_SUCCESS ? "USB_SUCCESS" : "Not USB_SUCCESS");
 		free(buffer);
-#if 1
+
 		if(poll == true){
 			USBHostSetNAKTimeout(
 				mUsbConfiguration.address,
@@ -436,7 +433,7 @@ boolean ADB_pollMessage(adb_message * message, boolean poll)
 				1,
 				USB_NAK_LIMIT);
 		}
-#endif
+
 		return false;
 	}
 
@@ -446,7 +443,6 @@ boolean ADB_pollMessage(adb_message * message, boolean poll)
 		NULL);
 //	tprintf("bytesRead = %d\r\n",bytesRead);
 
-#if 1
 	if(poll == true){
 		USBHostSetNAKTimeout(
 			mUsbConfiguration.address,
@@ -454,7 +450,6 @@ boolean ADB_pollMessage(adb_message * message, boolean poll)
 			1,
 			USB_NAK_LIMIT);
 	}
-#endif
 
 #endif
 
@@ -583,10 +578,6 @@ void ADB_openClosedConnections(Connection* connection)
 #else
 	// Issue open command.
 
-	tprintf("connection->status = %d\r\n",connection->status);
-
-	tprintf("connection->connectionString = [%s]\r\n",connection->connectionString);
-
 	if (connection->status==ADB_CLOSED/* && timeSinceLastConnect>ADB_CONNECTION_RETRY_TIME*/){
 
 		ADB_writeStringMessage(/*adbDevice, */A_OPEN, connection->localID, 0, connection->connectionString);
@@ -598,7 +589,6 @@ void ADB_openClosedConnections(Connection* connection)
 
 
 #endif
-
 
 }
 
